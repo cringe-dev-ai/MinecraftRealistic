@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1512" />
+  <meta name="description" content="TerraVista — a super realistic voxel sandbox with volumetric light, physical materials and living worlds. Play on desktop or mobile." />
+  <title>TerraVista · Realistic Voxel Worlds</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23161f1a'/%3E%3Cpath d='M12 40l20-14 20 14-20 14z' fill='%236f9d5c'/%3E%3Cpath d='M12 40v8l20 14 20-14v-8L32 54z' fill='%23446238'/%3E%3C/svg%3E" />
+  <script type="module" crossorigin src="./assets/index-CQa_1vuQ.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CyIL-XXq.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas" aria-label="TerraVista game world"></canvas>
+
+    <!-- ============ IN-GAME HUD ============ -->
+    <div id="hud" class="hud hidden">
+      <div class="hud-top">
+        <div class="brand-chip">
+          <span class="brand-dot"></span>
+          <span class="brand-name">TERRAVISTA</span>
+          <span class="brand-sep"></span>
+          <span id="world-label" class="world-label">Wilderness</span>
+        </div>
+        <div class="top-actions">
+          <button id="btn-map" class="icon-btn" aria-label="Toggle compass" title="Compass (C)">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/></svg>
+          </button>
+          <button id="btn-graphics" class="icon-btn" aria-label="Graphics settings" title="Graphics">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/><circle cx="17" cy="12" r="2.2"/><circle cx="14" cy="17" r="2.2"/></svg>
+          </button>
+          <button id="btn-pause" class="icon-btn" aria-label="Pause game" title="Menu (Esc)">
+            <svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="compass" class="compass">
+        <div class="compass-strip" id="compass-strip"></div>
+        <div class="compass-needle"></div>
+        <div class="compass-coords" id="compass-coords">0 · 64 · 0</div>
+      </div>
+
+      <div class="hud-center">
+        <div id="crosshair" class="crosshair">
+          <span class="ch-dot"></span>
+        </div>
+        <div id="mining-ring" class="mining-ring hidden"><svg viewBox="0 0 44 44"><circle class="ring-bg" cx="22" cy="22" r="19"/><circle id="ring-fg" class="ring-fg" cx="22" cy="22" r="19"/></svg></div>
+        <div id="target-name" class="target-name"></div>
+        <div id="toast-stack" class="toast-stack"></div>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="status-row">
+          <div id="health-row" class="health-row"></div>
+          <div class="status-spacer"></div>
+          <div id="biome-chip" class="biome-chip">Meadow</div>
+        </div>
+        <div class="hotbar-wrap">
+          <div id="hotbar" class="hotbar"></div>
+          <div class="hotbar-hint" id="hotbar-hint">Scroll or press 1–9 to select · E for inventory</div>
+        </div>
+      </div>
+
+      <div id="underwater-tint" class="underwater-tint"></div>
+      <div id="damage-flash" class="damage-flash"></div>
+      <div id="vignette" class="vignette"></div>
+    </div>
+
+    <!-- ============ MOBILE CONTROLS ============ -->
+    <div id="mobile-controls" class="mobile-controls hidden">
+      <div id="move-zone" class="move-zone">
+        <div class="joystick-base"><div id="joystick-knob" class="joystick-knob"></div></div>
+      </div>
+      <div class="touch-actions">
+        <button id="btn-fly" class="touch-btn small" aria-label="Toggle flight">
+          <svg viewBox="0 0 24 24"><path d="M3 13c5-4 8-4 9-1 1-3 4-3 9 1-4 1-7 1-9 0-2 1-5 1-9 0z"/></svg>
+          <span>Fly</span>
+        </button>
+        <button id="btn-jump" class="touch-btn" aria-label="Jump">
+          <svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+        </button>
+        <button id="btn-mine" class="touch-btn action" aria-label="Mine block">
+          <svg viewBox="0 0 24 24"><path d="M4 20l7-7M9 4l2 2 6 6 2 2M13 8l3-3M16 11l3-3"/></svg>
+          <span>Mine</span>
+        </button>
+        <button id="btn-place" class="touch-btn action" aria-label="Place block">
+          <svg viewBox="0 0 24 24"><path d="M12 4l8 4.5v7L12 20l-8-4.5v-7z"/><path d="M4 8.5l8 4.5 8-4.5M12 13v7"/></svg>
+          <span>Place</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ START SCREEN ============ -->
+    <div id="start-screen" class="screen start-screen">
+      <div class="start-bg-shade"></div>
+      <div class="start-topbar">
+        <div class="logo-mark">
+          <svg viewBox="0 0 48 48" class="logo-cube"><path d="M24 5L42 15v18L24 43 6 33V15z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 15l18 10 18-10M24 25v18" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M24 5l18 10-18 10L6 15z" fill="currentColor" opacity=".18"/></svg>
+          <div>
+            <div class="logo-words">TERRA<span>VISTA</span></div>
+            <div class="logo-sub">REALISTIC VOXEL WORLDS</div>
+          </div>
+        </div>
+        <div class="start-meta">
+          <span class="live-dot"></span><span id="start-clock">07:20</span>
+          <span class="meta-divider"></span>
+          <span id="start-biome">Generating wilderness</span>
+        </div>
+      </div>
+
+      <div class="start-content">
+        <div class="eyebrow"><span class="eyebrow-line"></span>EXPLORE · BUILD · SURVIVE</div>
+        <h1 class="hero-title">Every block<br /><em>comes alive.</em></h1>
+        <p class="hero-copy">An infinite, physically lit voxel world. Chunked terrain, dynamic weather, PBR materials and a living ecosystem — built for desktop and touch.</p>
+
+        <div class="start-actions">
+          <button id="btn-play" class="btn btn-primary" disabled>
+            <span class="btn-label">Play</span>
+            <span class="btn-arrow">→</span>
+          </button>
+          <button id="btn-new-world" class="btn btn-ghost">New world</button>
+        </div>
+
+        <div id="load-status" class="load-status">
+          <div class="load-bar"><div id="load-fill" class="load-fill"></div></div>
+          <div id="load-label" class="load-label">Shaping the land…</div>
+        </div>
+
+        <div class="seed-row">
+          <label for="seed-input">WORLD SEED</label>
+          <input id="seed-input" type="text" inputmode="numeric" maxlength="9" value="1337" spellcheck="false" />
+          <button id="btn-apply-seed" class="seed-apply">Apply</button>
+        </div>
+
+        <div class="start-features">
+          <div class="feature"><span class="f-ico">◈</span><div><b>Physically based</b><small>Normal-mapped PBR terrain &amp; water</small></div></div>
+          <div class="feature"><span class="f-ico">☀</span><div><b>Living sky</b><small>Volumetric clouds &amp; golden-hour light</small></div></div>
+          <div class="feature"><span class="f-ico">⌁</span><div><b>True physics</b><small>Voxel collision, swimming &amp; falling blocks</small></div></div>
+        </div>
+      </div>
+
+      <div class="start-footer">
+        <div class="footer-col"><span class="kbd">WASD</span> move <span class="kbd">SPACE</span> jump <span class="kbd">SHIFT</span> sprint</div>
+        <div class="footer-col right">Touch controls detected automatically <span class="dot-sep">·</span> v1.0</div>
+      </div>
+    </div>
+
+    <!-- ============ PAUSE / SETTINGS ============ -->
+    <div id="pause-screen" class="screen panel-screen hidden">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-eyebrow">TERRAVISTA</div>
+            <h2>Paused</h2>
+          </div>
+          <button id="btn-resume" class="icon-btn close-btn" aria-label="Resume">
+            <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+
+        <div class="panel-tabs" role="tablist">
+          <button class="tab active" data-tab="tab-main">Menu</button>
+          <button class="tab" data-tab="tab-graphics">Graphics</button>
+          <button class="tab" data-tab="tab-controls">Controls</button>
+        </div>
+
+        <div id="tab-main" class="tab-panel active">
+          <button id="btn-resume-2" class="btn btn-primary wide"><span class="btn-label">Resume</span><span class="btn-arrow">→</span></button>
+          <div class="panel-grid">
+            <button id="btn-save" class="btn btn-ghost">Save world</button>
+            <button id="btn-new-world-2" class="btn btn-ghost danger">New world</button>
+          </div>
+          <div class="stat-grid">
+            <div><span>Seed</span><b id="stat-seed">1337</b></div>
+            <div><span>Biome</span><b id="stat-biome">Meadow</b></div>
+            <div><span>Position</span><b id="stat-pos">0, 64, 0</b></div>
+            <div><span>Day</span><b id="stat-day">1 · 07:20</b></div>
+          </div>
+        </div>
+
+        <div id="tab-graphics" class="tab-panel">
+          <div class="setting">
+            <div class="setting-head"><span>Quality preset</span><b id="quality-val">High</b></div>
+            <div class="segmented" id="quality-seg">
+              <button data-quality="low">Performance</button>
+              <button data-quality="medium">Balanced</button>
+              <button data-quality="high">High</button>
+              <button data-quality="ultra">Cinematic</button>
+            </div>
+          </div>
+          <div class="setting">
+            <div class="setting-head"><span>Render distance</span><b id="distance-val">5 chunks</b></div>
+            <input id="distance-range" type="range" min="2" max="8" step="1" value="5" />
+          </div>
+          <div class="setting">
+            <div class="setting-head"><span>Field of view</span><b id="fov-val">74°</b></div>
+            <input id="fov-range" type="range" min="55" max="100" step="1" value="74" />
+          </div>
+          <div class="setting">
+            <div class="setting-head"><span>Mouse sensitivity</span><b id="sens-val">1.0×</b></div>
+            <input id="sens-range" type="range" min="30" max="220" step="5" value="100" />
+          </div>
+          <div class="setting toggle-row">
+            <div><span>Bloom &amp; light bloom</span><small>Cinematic glow around bright light</small></div>
+            <button id="toggle-bloom" class="switch on" aria-pressed="true"></button>
+          </div>
+          <div class="setting toggle-row">
+            <div><span>Sun shadows</span><small>Real-time soft shadow mapping</small></div>
+            <button id="toggle-shadows" class="switch on" aria-pressed="true"></button>
+          </div>
+          <div class="setting toggle-row">
+            <div><span>Ambient audio</span><small>Wind, birds and footsteps</small></div>
+            <button id="toggle-audio" class="switch on" aria-pressed="true"></button>
+          </div>
+        </div>
+
+        <div id="tab-controls" class="tab-panel">
+          <div class="key-list">
+            <div><span>Move</span><b><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span></b></div>
+            <div><span>Jump / swim up</span><b><span class="kbd">SPACE</span></b></div>
+            <div><span>Sprint</span><b><span class="kbd">SHIFT</span></b></div>
+            <div><span>Sneak / descend</span><b><span class="kbd">CTRL</span></b></div>
+            <div><span>Toggle flight</span><b><span class="kbd">F</span></b></div>
+            <div><span>Mine / place</span><b><span class="kbd">LMB</span><span class="kbd">RMB</span></b></div>
+            <div><span>Inventory</span><b><span class="kbd">E</span></b></div>
+            <div><span>Hotbar</span><b><span class="kbd">1</span>–<span class="kbd">9</span></b></div>
+            <div><span>Pause</span><b><span class="kbd">ESC</span></b></div>
+          </div>
+          <p class="fineprint">On touch devices a joystick, look drag, jump, mine and place controls appear automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ INVENTORY ============ -->
+    <div id="inventory-screen" class="screen panel-screen hidden">
+      <div class="panel inventory-panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-eyebrow">CREATIVE MATERIALS</div>
+            <h2>Block palette</h2>
+          </div>
+          <button id="btn-close-inventory" class="icon-btn close-btn" aria-label="Close inventory">
+            <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <p class="inventory-hint">Pick a material for your hotbar. Build without limits.</p>
+        <div id="inventory-grid" class="inventory-grid"></div>
+      </div>
+    </div>
+
+    <!-- ============ DEATH ============ -->
+    <div id="death-screen" class="screen death-screen hidden">
+      <div class="death-inner">
+        <div class="panel-eyebrow">THE WILDERNESS CLAIMED YOU</div>
+        <h2>You fell</h2>
+        <p>Respawn at the last high ground.</p>
+        <button id="btn-respawn" class="btn btn-primary"><span class="btn-label">Respawn</span><span class="btn-arrow">→</span></button>
+      </div>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay hidden">
+      <div class="loader-cube"></div>
+      <div class="loading-text">Finishing the horizon…</div>
+    </div>
+
+    <div id="fps" class="fps hidden">60</div>
+    <div id="version-chip" class="version-chip">TERRAVISTA · WEBGL2</div>
+  </div>
+</body>
+</html>
